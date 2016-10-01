@@ -2,13 +2,18 @@
 #ifndef IMAGE_KERNELS_H
 #define IMAGE_KERNELS_H
 
-const int KERNEL_SIZE_3 = 3;
-const int KERNEL_SIZE_5 = 5;
-const int KERNEL_SIZE_91 = 91;
+#include <cstdint>
+using namespace std;
 
-typedef const int image_kernel_3[KERNEL_SIZE_3][KERNEL_SIZE_3];
-typedef const int image_kernel_5[KERNEL_SIZE_5][KERNEL_SIZE_5];
-typedef const int image_kernel_91[KERNEL_SIZE_91][KERNEL_SIZE_91];
+namespace image_kernels
+{
+const uint32_t KERNEL_SIZE_3 = 3;
+const uint32_t KERNEL_SIZE_5 = 5;
+const uint32_t KERNEL_SIZE_91 = 91;
+
+typedef uint32_t image_kernel_3[KERNEL_SIZE_3][KERNEL_SIZE_3];
+typedef uint32_t image_kernel_5[KERNEL_SIZE_5][KERNEL_SIZE_5];
+typedef uint32_t image_kernel_91[KERNEL_SIZE_91][KERNEL_SIZE_91];
 
 image_kernel_3 BOX_BLUR_3 = { { 1, 1, 1 },
                               { 1, 1, 1 },
@@ -111,5 +116,7 @@ image_kernel_91 BOX_BLUR_91 = { { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
                                 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
                                 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
                                 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } };
+
+} // end namespace image_kernels
 
 #endif
