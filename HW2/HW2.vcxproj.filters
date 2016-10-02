@@ -20,9 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="image_kernels.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
