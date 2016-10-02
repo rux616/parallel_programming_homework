@@ -246,3 +246,4 @@ data/
 *.jpg
 *.pgm
 *.o
+/HW2/parallel_outer_l/parallel_convolutions
