@@ -57,8 +57,8 @@ int main(int32_t argc, const char * argv[])
 
         // No arguments, or more than the max number of arguments.  Spit out the syntax.
         default:
-            fprintf(stderr, "Syntax: parallel-convolution.exe <num_threads> <kernel_size> \
-                <input_filename> [output_filename]\n");
+            fprintf(stderr, "Syntax: parallel-convolution.exe <num_threads> <kernel_size> "
+                    "<input_filename> [output_filename]\n");
             to_return = 1;
             goto exit_program; // Using goto to jump to a central resource deallocation area.
     }
