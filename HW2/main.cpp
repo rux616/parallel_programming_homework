@@ -1,3 +1,13 @@
+/*--------------------------------------------------------------------------------------------------
+ * Author:      Dan Cassidy
+ * Date:        2016-10-04
+ * Assignment:  Homework 2
+ * Source File: main.cpp
+ * Language:    C/C++
+ * Course:      CSCI-B 424 Parallel Programming
+ * Purpose:     Parallelizes a blurring image convolution.
+ -------------------------------------------------------------------------------------------------*/
+
 #include <cstddef>
 #include <cstdio>
 #include <chrono>
