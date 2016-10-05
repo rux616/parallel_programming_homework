@@ -47,7 +47,8 @@ int main(int32_t argc, const char * argv[])
 
         // No arguments, or more than the max number of arguments.  Spit out the syntax.
         default:
-            fprintf(stderr, "Syntax: parallel-convolution.exe <num_threads> <kernel_size> <input_filename> [output_filename]\n");
+            fprintf(stderr, "Syntax: parallel-convolution.exe <num_threads> <kernel_size> \
+                <input_filename> [output_filename]\n");
             to_return = 1;
             goto exit_program; // Using goto to jump to a central resource deallocation area.
     }
@@ -97,7 +98,8 @@ int main(int32_t argc, const char * argv[])
     printf("Image dimensions: %dx%d", width, height);
     
     // Create the array to read the file into.
-    input_data = utility::create_array_2d<uint8_t>(height + kernel_size - 1, width + kernel_size - 1);
+    input_data = utility::create_array_2d<uint8_t>(height + kernel_size - 1,
+                                                   width + kernel_size - 1);
 
 
     // Read the input file, then close the input stream.
@@ -127,7 +129,9 @@ int main(int32_t argc, const char * argv[])
         // Iterate through the full input data.
         for (int32_t data_row = kernel_offset; data_row < height + kernel_offset; data_row++)
         {
-            for (int32_t data_column = kernel_offset; data_column < width + kernel_offset; data_column++)
+            for (int32_t data_column = kernel_offset;
+                 data_column < width + kernel_offset;
+                 data_column++)
             {
                 int32_t sum = 0;
 
@@ -144,8 +148,9 @@ int main(int32_t argc, const char * argv[])
                     }
                 }
 
-                // Once the summation is done, store that value in the output array.
-                output_data[data_row - kernel_offset][data_column - kernel_offset] = sum / (kernel_size * kernel_size);
+                // Once the summation is done, store the normalized value in the output array.
+                output_data[data_row - kernel_offset][data_column - kernel_offset] = 
+                    sum / (kernel_size * kernel_size);
             }
         }
     }
