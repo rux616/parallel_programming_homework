@@ -6,7 +6,7 @@
  * Language:    C/C++
  * Course:      CSCI-B 424 Parallel Programming
  * Purpose:     Contains some utility template functions to make my life easier.
- -------------------------------------------------------------------------------------------------*/
+--------------------------------------------------------------------------------------------------*/
 
 #pragma once
 #ifndef UTILITY_H

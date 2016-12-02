@@ -6,6 +6,6 @@ do
 	for((j=1;j<=$3;j+=1))
 	do
 		echo 'Test iteration ' $j ' of ' $3
-		./parallel_convolutions $i $4 ../data/input.pgm >> output.log
+		./parallel_convolutions $i $4 ../data/input.pgm ./output.pgm >> output.log
 	done
 done

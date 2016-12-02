@@ -105,7 +105,7 @@ int main(int32_t argc, const char * argv[])
         to_return = 1;
         goto exit_program;
     }
-    printf("Image dimensions: %dx%d", width, height);
+    printf("Image dimensions: %dx%d\n", width, height);
     
     // Create the array to read the file into.
     input_data = utility::create_array_2d<uint8_t>(height + kernel_size - 1,
@@ -135,8 +135,8 @@ int main(int32_t argc, const char * argv[])
         #pragma omp master
         printf("Number of threads created: %d\n", omp_get_num_threads());
         
-        #pragma omp for
         // Iterate through the full input data.
+        #pragma omp for
         for (int32_t data_row = kernel_offset; data_row < height + kernel_offset; data_row++)
         {
             for (int32_t data_column = kernel_offset;
