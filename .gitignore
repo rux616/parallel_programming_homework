@@ -247,3 +247,5 @@ data/
 *.pgm
 *.o
 /HW2/parallel_outer_l/parallel_convolutions
+/Homework.VC (djcassid@iusb.edu).db
+**/*.vcxproj.filters
