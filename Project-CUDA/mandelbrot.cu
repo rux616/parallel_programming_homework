@@ -8,10 +8,14 @@
 
 #include <GL/gl.h>
 #include <GL/glut.h>
-#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+#include <chrono>
+#else
+#include <ctime>
+#endif
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 using namespace std;
@@ -45,7 +49,6 @@ const unsigned int DEFAULT_NUM_ITERATIONS = 1000;
 const unsigned int DEFAULT_NUM_CUDA_BLOCKS = 1;
 const unsigned int DEFAULT_NUM_CUDA_THREADS_PER_BLOCK = 32;
 
-
 //-----------------
 // General Globals
 //-----------------
@@ -54,7 +57,8 @@ unsigned int image_height;
 unsigned int num_iterations;
 float x_increment;
 float y_increment;
-rgb *h_pixels = nullptr;        // Contains the colors of the pixels on the host.
+// Contains the colors of the pixels on the host.
+rgb * h_pixels = nullptr;
 
 //---------------------------------
 // Implementation-Specific Globals
@@ -64,6 +68,41 @@ unsigned int num_cuda_blocks;
 unsigned int num_cuda_threads_per_block;
 
 
+
+// Initialize the pixels array on the GPU.
+__global__ void init_pixels_kernel(const unsigned int num_pixels, rgb * d_pixels)
+{
+    for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+         i < num_pixels;
+         i += blockDim.x * gridDim.x)
+    {
+        d_pixels[i].r = 1.0f;
+        d_pixels[i].g = 1.0f;
+        d_pixels[i].b = 1.0f;
+    }
+}
+
+// Initialize the pattern array on the GPU.
+__global__ void init_pattern_kernel(const unsigned int pattern_size, rgb * d_pattern)
+{
+    for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+         i < pattern_size;
+         i += blockDim.x * gridDim.x)
+    {
+        if (i > 729)
+        {
+            d_pattern[i].r = 1.0f;
+            d_pattern[i].g = 1.0f;
+            d_pattern[i].b = 1.0f;
+        }
+        else
+        {
+            d_pattern[i].r = 0.1f + (i % 9) * 0.1f;
+            d_pattern[i].g = 0.1f + (i / 81) * 0.1f;
+            d_pattern[i].b = 0.1f + ((i / 9) % 9) * 0.1f;
+        }
+    }
+}
 
 // Generate a mandlebrot set and map its colors.
 __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned int image_height,
@@ -106,42 +145,9 @@ __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned
     }
 }
 
-__global__ void init_pixels_kernel(const unsigned int num_pixels, rgb * d_pixels)
-{
-    for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-         i < num_pixels;
-         i += blockDim.x * gridDim.x)
-    {
-        d_pixels[i].r = 1.0f;
-        d_pixels[i].g = 1.0f;
-        d_pixels[i].b = 1.0f;
-    }
-}
-
-__global__ void init_pattern_kernel(const unsigned int pattern_size, rgb * d_pattern)
-{
-    for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-         i < pattern_size;
-         i += blockDim.x * gridDim.x)
-    {
-        if (i > 729)
-        {
-            d_pattern[i].r = 1.0f;
-            d_pattern[i].g = 1.0f;
-            d_pattern[i].b = 1.0f;
-        }
-        else
-        {
-            d_pattern[i].r = 0.1f + (i % 9) * 0.1f;
-            d_pattern[i].g = 0.1f + (i / 81) * 0.1f;
-            d_pattern[i].b = 0.1f + ((i / 9) % 9) * 0.1f;
-        }
-    }
-}
-
 cudaError_t Init()
 {
-#ifdef SHOW_RESULT
+    #ifdef SHOW_RESULT
     // Basic Opengl initialization.
     glViewport(0, 0, image_width, image_height);
     glMatrixMode(GL_MODELVIEW);
@@ -149,7 +155,7 @@ cudaError_t Init()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0, image_width, 0, image_height);
-#endif
+    #endif
 
 
     // Declare variables.
@@ -159,11 +165,23 @@ cudaError_t Init()
     // Declare a variable to hold the status of the CUDA device so it can be checked.
     cudaError_t cuda_status;
     // Declare a variable to hold the starting time point of the mandelbrot call.
-    chrono::high_resolution_clock::time_point t1;
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    chrono::high_resolution_clock::time_point time_begin;
+    #else
+    timespec time_begin;
+    #endif
     // Declare a variable to hold the ending time point of the mandelbrot call.
-    chrono::high_resolution_clock::time_point t2;
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    chrono::high_resolution_clock::time_point time_end;
+    #else
+    timespec time_end;
+    #endif
     // Declare a variable to hold the duration of the mandelbrot call.
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     chrono::duration<double> time_span;
+    #else
+    double time_span;
+    #endif
 
     // Calculate the increments in the mandlebrot set.
     x_increment = abs(X_RANGE_START - X_RANGE_END) / image_width;
@@ -203,7 +221,7 @@ cudaError_t Init()
     //Initialize the pixel and pattern arrays on the device.
     init_pixels_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(image_height * image_width,
                                                                         d_pixels);
-    //cuda_status = cudaDeviceSynchronize();
+    cuda_status = cudaDeviceSynchronize();
     // Check for any errors that occurred while launching the kernel.
     cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
@@ -212,7 +230,7 @@ cudaError_t Init()
         goto Error;
     }
     init_pattern_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(PATTERN_SIZE, d_pattern);
-    //cuda_status = cudaDeviceSynchronize();
+    cuda_status = cudaDeviceSynchronize();
     // Check for any errors that occurred while launching the kernel.
     cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
@@ -222,7 +240,11 @@ cudaError_t Init()
     }
 
     // Record the current (starting) time of the mandelbrot call.
-    t1 = chrono::high_resolution_clock::now();
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_begin = chrono::high_resolution_clock::now();
+    #else
+    clock_gettime(CLOCK_REALTIME, &time_begin);
+    #endif
 
     // Call the mandelbrot function on the device.
     mandelbrot_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(image_width, image_height,
@@ -233,13 +255,22 @@ cudaError_t Init()
     cuda_status = cudaDeviceSynchronize();
 
     // Record the current (ending) time of the mandelbrot call.
-    t2 = chrono::high_resolution_clock::now();
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_end = chrono::high_resolution_clock::now();
+    #else
+    clock_gettime(CLOCK_REALTIME, &time_end);
+    #endif
 
     // Calculate the duration of the mandelbrot call.
-    time_span = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_span = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
+    #else
+    time_span = (1000000000 * (time_end.tv_sec - time_begin.tv_sec) + time_end.tv_nsec - 
+                 time_begin.tv_sec) / (double)1000000000;
+    #endif
 
     // Check for any errors that occurred while launching the kernel.
-    //cuda_status = cudaGetLastError();
+    cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
     {
         fprintf(stderr, "mandelbrot_kernel launch failed: %s\n", cudaGetErrorString(cuda_status));
@@ -247,7 +278,6 @@ cudaError_t Init()
     }
 
     // Copy the pixel array from the device to the host.
-    // Can I tell the GPU to make a texture of this image and then tell OpenGL to display it?
     cuda_status = cudaMemcpy(h_pixels, d_pixels, image_width * image_height * sizeof(rgb),
                              cudaMemcpyDeviceToHost);
     if (cuda_status != cudaSuccess)
@@ -257,8 +287,13 @@ cudaError_t Init()
         goto Error;
     }
 
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     printf("Performed %d iterations in %f seconds using %d blocks and %d threads per block.\n",
            num_iterations, time_span.count(), num_cuda_blocks, num_cuda_threads_per_block);
+    #else
+    printf("Performed %d iterations in %f seconds using %d blocks and %d threads per block.\n",
+           num_iterations, time_span, num_cuda_blocks, num_cuda_threads_per_block);
+    #endif
 
 Error:
     cudaFree(d_pixels);
@@ -324,14 +359,14 @@ int main(int argc, char** argv)
         num_cuda_threads_per_block = DEFAULT_NUM_CUDA_THREADS_PER_BLOCK;
     }
 
-#ifdef SHOW_RESULT
+    #ifdef SHOW_RESULT
     // Perform basic OpenGL initialization.
     glutInit(&argc, argv);
     glutInitWindowSize(image_width, image_height);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Mandelbrotset by SKR");
-#endif
+    #endif
 
     // Create a variable to hold the return code.
     int to_return = 0;
@@ -343,15 +378,15 @@ int main(int argc, char** argv)
     }
     else
     {
-#ifdef SHOW_RESULT
+        #ifdef SHOW_RESULT
         // Connecting the display function
         glutDisplayFunc(onDisplay);
         // starting the activities
         glutMainLoop();
-#endif
+        #endif
     }
 
-    // Attempt to reset the device.  This is to allow tracing tools (Nsight/Visual Profile/etc.) to
+    // Attempt to reset the device.  This is to allow tracing tools (Nsight/Visual Profiler/etc.) to
     // show complete traces.
     if (cudaDeviceReset() != cudaSuccess)
     {
