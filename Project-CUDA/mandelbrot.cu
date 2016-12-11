@@ -104,7 +104,7 @@ __global__ void init_pattern_kernel(const unsigned int pattern_size, rgb * d_pat
     }
 }
 
-// Generate a mandlebrot set and map its colors.
+// Generate a mandelbrot set and map its colors.
 __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned int image_height,
                                   const float x_range_start, const float y_range_start,
                                   const float x_increment, const float y_increment,
