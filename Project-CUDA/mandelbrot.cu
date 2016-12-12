@@ -190,6 +190,7 @@ cudaError_t Init()
     h_pixels = (rgb *)malloc(image_width * image_height * sizeof(rgb));
     if (h_pixels == nullptr)
     {
+        cuda_status = cudaErrorMemoryAllocation;
         fprintf(stderr, "Memory allocation failed. (h_pixels)\n");
         goto Error;
     }
