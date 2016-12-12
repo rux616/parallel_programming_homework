@@ -125,10 +125,8 @@ __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned
         float x0 = x_range_start + (pixel % image_width) * x_increment;
 
         // Calculate the iterations of a particular point.
-        float x = 0.0; //used in Mandelbrot calculations
-        float y = 0.0; //used in Mandelbrot calculations
-        float xtemp; //used as a placeholder
-        unsigned int iteration = 0; //index for number of iterations
+        float x = 0.0, y = 0.0, xtemp; // Used in Mandelbrot calculations.
+        unsigned int iteration = 0; // Index for number of iterations.
         while ((x * x) + (y * y) < (2 * 2) && iteration < max_iterations)
         {
             xtemp = (x * x) - (y * y) + x0;
