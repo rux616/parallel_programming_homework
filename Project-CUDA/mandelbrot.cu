@@ -104,7 +104,7 @@ __global__ void init_pattern_kernel(const unsigned int pattern_size, rgb * d_pat
     }
 }
 
-// Generate a mandelbrot set and map its colors.
+// Generate a Mandelbrot set and map its colors.
 __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned int image_height,
                                   const float x_range_start, const float y_range_start,
                                   const float x_increment, const float y_increment,
@@ -125,8 +125,8 @@ __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned
         float x0 = x_range_start + (pixel % image_width) * x_increment;
 
         // Calculate the iterations of a particular point.
-        float x = 0.0; //used in mandelbrot calculations
-        float y = 0.0; //used in mandelbrot calculations
+        float x = 0.0; //used in Mandelbrot calculations
+        float y = 0.0; //used in Mandelbrot calculations
         float xtemp; //used as a placeholder
         unsigned int iteration = 0; //index for number of iterations
         while ((x * x) + (y * y) < (2 * 2) && iteration < max_iterations)
@@ -148,7 +148,7 @@ __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned
 cudaError_t Init()
 {
     #ifdef SHOW_RESULT
-    // Basic Opengl initialization.
+    // Basic OpenGL initialization.
     glViewport(0, 0, image_width, image_height);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -164,26 +164,26 @@ cudaError_t Init()
     rgb * d_pattern = 0;
     // Declare a variable to hold the status of the CUDA device so it can be checked.
     cudaError_t cuda_status;
-    // Declare a variable to hold the starting time point of the mandelbrot call.
+    // Declare a variable to hold the starting time point of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     chrono::high_resolution_clock::time_point time_begin;
     #else
     timespec time_begin;
     #endif
-    // Declare a variable to hold the ending time point of the mandelbrot call.
+    // Declare a variable to hold the ending time point of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     chrono::high_resolution_clock::time_point time_end;
     #else
     timespec time_end;
     #endif
-    // Declare a variable to hold the duration of the mandelbrot call.
+    // Declare a variable to hold the duration of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     chrono::duration<double> time_span;
     #else
     double time_span;
     #endif
 
-    // Calculate the increments in the mandlebrot set.
+    // Calculate the increments in the Mandelbrot set.
     x_increment = abs(X_RANGE_START - X_RANGE_END) / image_width;
     y_increment = abs(Y_RANGE_START - Y_RANGE_END) / image_height;
 
@@ -239,14 +239,14 @@ cudaError_t Init()
         goto Error;
     }
 
-    // Record the current (starting) time of the mandelbrot call.
+    // Record the current (starting) time of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     time_begin = chrono::high_resolution_clock::now();
     #else
     clock_gettime(CLOCK_REALTIME, &time_begin);
     #endif
 
-    // Call the mandelbrot function on the device.
+    // Call the Mandelbrot function on the device.
     mandelbrot_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(image_width, image_height,
                                                                        X_RANGE_START, Y_RANGE_START,
                                                                        x_increment, y_increment,
@@ -254,14 +254,14 @@ cudaError_t Init()
                                                                        d_pixels, d_pattern);
     cuda_status = cudaDeviceSynchronize();
 
-    // Record the current (ending) time of the mandelbrot call.
+    // Record the current (ending) time of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     time_end = chrono::high_resolution_clock::now();
     #else
     clock_gettime(CLOCK_REALTIME, &time_end);
     #endif
 
-    // Calculate the duration of the mandelbrot call.
+    // Calculate the duration of the Mandelbrot call.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     time_span = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
     #else
@@ -365,7 +365,7 @@ int main(int argc, char** argv)
     glutInitWindowSize(image_width, image_height);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("Mandelbrotset by SKR");
+    glutCreateWindow("Mandelbrot Set by SKR");
     #endif
 
     // Create a variable to hold the return code.
