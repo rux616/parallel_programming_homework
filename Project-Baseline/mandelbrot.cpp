@@ -126,7 +126,7 @@ void mandelbrotset()
 
 void Init()
 {
-#ifdef SHOW_RESULT
+#ifdef M_SHOW_RESULT
     // Basic Opengl initialization.
     // image_width = (-2.5 - 1.1)/0.0025
     // here total x coordinate distance / no of division.
@@ -184,7 +184,7 @@ void Init()
     printf("Performed %d iterations in %f seconds.\n", num_iterations, time_span.count());
 }
 
-#ifdef SHOW_RESULT
+#ifdef M_SHOW_RESULT
 void onDisplay()
 {
     // Clearing the initial buffer
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
     pattern = new rgb[PATTERN_SIZE];
 
 
-#ifdef SHOW_RESULT
+#ifdef M_SHOW_RESULT
     // Perform basic OpenGL initialization.
     glutInit(&argc, argv);
     glutInitWindowSize(image_width, image_height);
@@ -255,7 +255,7 @@ int main(int argc, char** argv)
     Init();
 
 
-#ifdef SHOW_RESULT
+#ifdef M_SHOW_RESULT
     // Connecting the display function
     glutDisplayFunc(onDisplay);
     // starting the activities
