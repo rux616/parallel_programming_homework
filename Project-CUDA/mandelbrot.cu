@@ -6,6 +6,13 @@
  * the License, or (at your option) any later version.
  **************************************************************************************************/
 
+// A note on some of the macros used in this program:
+// M_SHOW_RESULT - Decides whether the resulting Mandelbrot set will be displayed or not.
+// M_KERNEL_TIMING_ONLY - Decides whether to time just the kernel call or all the other stuff, such
+//     as device memory allocation and array initialization, too.
+// M_SYNCHRONIZE - Decides whether the kernel calls will be synchronized, that is, will pause the
+//     program until they are done executing.
+
 #include <GL/gl.h>
 #include <GL/glut.h>
 #include <cmath>
@@ -145,7 +152,7 @@ __global__ void mandelbrot_kernel(const unsigned int image_width, const unsigned
 
 cudaError_t Init()
 {
-    #ifdef SHOW_RESULT
+    #ifdef M_SHOW_RESULT
     // Basic OpenGL initialization.
     glViewport(0, 0, image_width, image_height);
     glMatrixMode(GL_MODELVIEW);
@@ -203,6 +210,15 @@ cudaError_t Init()
         goto Error;
     }
     
+    // Record the current (starting) time of the sequence of events surrounding the Mandelbrot call.
+    #ifndef M_KERNEL_TIMING_ONLY
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_begin = chrono::high_resolution_clock::now();
+    #else
+    clock_gettime(CLOCK_REALTIME, &time_begin);
+    #endif
+    #endif
+
     // Allocate memory for the pixel and pattern arrays on the device.
     cuda_status = cudaMalloc(&d_pixels, image_width * image_height * sizeof(rgb));
     if (cuda_status != cudaSuccess)
@@ -220,29 +236,39 @@ cudaError_t Init()
     //Initialize the pixel and pattern arrays on the device.
     init_pixels_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(image_height * image_width,
                                                                         d_pixels);
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaDeviceSynchronize();
+    #endif
     // Check for any errors that occurred while launching the kernel.
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
     {
         fprintf(stderr, "init_pixels_kernel launch failed: %s\n", cudaGetErrorString(cuda_status));
         goto Error;
     }
+    #endif
     init_pattern_kernel<<<num_cuda_blocks, num_cuda_threads_per_block>>>(PATTERN_SIZE, d_pattern);
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaDeviceSynchronize();
+    #endif
     // Check for any errors that occurred while launching the kernel.
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
     {
         fprintf(stderr, "init_pattern_kernel launch failed: %s\n", cudaGetErrorString(cuda_status));
         goto Error;
     }
+    #endif
 
     // Record the current (starting) time of the Mandelbrot call.
+    #ifdef M_KERNEL_TIMING_ONLY
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     time_begin = chrono::high_resolution_clock::now();
     #else
     clock_gettime(CLOCK_REALTIME, &time_begin);
+    #endif
     #endif
 
     // Call the Mandelbrot function on the device.
@@ -251,30 +277,28 @@ cudaError_t Init()
                                                                        x_increment, y_increment,
                                                                        num_iterations, PATTERN_SIZE,
                                                                        d_pixels, d_pattern);
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaDeviceSynchronize();
+    #endif
 
     // Record the current (ending) time of the Mandelbrot call.
+    #ifdef M_KERNEL_TIMING_ONLY
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     time_end = chrono::high_resolution_clock::now();
     #else
     clock_gettime(CLOCK_REALTIME, &time_end);
     #endif
-
-    // Calculate the duration of the Mandelbrot call.
-    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
-    time_span = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
-    #else
-    time_span = (1000000000 * (time_end.tv_sec - time_begin.tv_sec) + time_end.tv_nsec - 
-                 time_begin.tv_sec) / (double)1000000000;
     #endif
 
     // Check for any errors that occurred while launching the kernel.
+    #ifdef M_SYNCHRONIZE
     cuda_status = cudaGetLastError();
     if (cuda_status != cudaSuccess)
     {
         fprintf(stderr, "mandelbrot_kernel launch failed: %s\n", cudaGetErrorString(cuda_status));
         goto Error;
     }
+    #endif
 
     // Copy the pixel array from the device to the host.
     cuda_status = cudaMemcpy(h_pixels, d_pixels, image_width * image_height * sizeof(rgb),
@@ -286,6 +310,24 @@ cudaError_t Init()
         goto Error;
     }
 
+    // Record the current (ending) time of the sequence of events surrounding the Mandelbrot call.
+    #ifndef M_KERNEL_TIMING_ONLY
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_end = chrono::high_resolution_clock::now();
+    #else
+    clock_gettime(CLOCK_REALTIME, &time_end);
+    #endif
+    #endif
+    
+    // Calculate the duration of the Mandelbrot call.
+    #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    time_span = chrono::duration_cast<chrono::duration<double>>(time_end - time_begin);
+    #else
+    time_span = (1000000000 * (time_end.tv_sec - time_begin.tv_sec) + time_end.tv_nsec -
+                 time_begin.tv_nsec) / (double)1000000000;
+    #endif
+
+    // Display the results.
     #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
     printf("Performed %d iterations in %f seconds using %d blocks and %d threads per block.\n",
            num_iterations, time_span.count(), num_cuda_blocks, num_cuda_threads_per_block);
@@ -301,7 +343,7 @@ Error:
     return cuda_status;
 }
 
-#ifdef SHOW_RESULT
+#ifdef M_SHOW_RESULT
 void onDisplay()
 {
     // Clearing the initial buffer
@@ -358,7 +400,7 @@ int main(int argc, char** argv)
         num_cuda_threads_per_block = DEFAULT_NUM_CUDA_THREADS_PER_BLOCK;
     }
 
-    #ifdef SHOW_RESULT
+    #ifdef M_SHOW_RESULT
     // Perform basic OpenGL initialization.
     glutInit(&argc, argv);
     glutInitWindowSize(image_width, image_height);
@@ -377,7 +419,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        #ifdef SHOW_RESULT
+        #ifdef M_SHOW_RESULT
         // Connecting the display function
         glutDisplayFunc(onDisplay);
         // starting the activities
